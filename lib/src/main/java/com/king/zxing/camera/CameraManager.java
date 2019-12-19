@@ -73,6 +73,11 @@ public final class CameraManager {
      */
     private final PreviewCallback previewCallback;
 
+    private OnTorchListener onTorchListener;
+    private OnSensorListener onSensorListener;
+
+    private boolean isTorch;
+
     public CameraManager(Context context) {
         this.context = context.getApplicationContext();
         this.configManager = new CameraConfigurationManager(context);
@@ -85,7 +90,7 @@ public final class CameraManager {
      * @param holder The surface object which the camera will draw preview frames into.
      * @throws IOException Indicates the camera driver failed to open.
      */
-    public synchronized void openDriver(SurfaceHolder holder) throws IOException {
+    public void openDriver(SurfaceHolder holder) throws IOException {
         OpenCamera theCamera = camera;
         if (theCamera == null) {
             theCamera = OpenCameraInterface.open(requestedCameraId);
@@ -142,7 +147,7 @@ public final class CameraManager {
     /**
      * Closes the camera driver if still in use.
      */
-    public synchronized void closeDriver() {
+    public void closeDriver() {
         if (camera != null) {
             camera.getCamera().release();
             camera = null;
@@ -156,7 +161,7 @@ public final class CameraManager {
     /**
      * Asks the camera hardware to begin drawing preview frames to the screen.
      */
-    public synchronized void startPreview() {
+    public void startPreview() {
         OpenCamera theCamera = camera;
         if (theCamera != null && !previewing) {
             theCamera.getCamera().startPreview();
@@ -168,7 +173,7 @@ public final class CameraManager {
     /**
      * Tells the camera to stop drawing preview frames.
      */
-    public synchronized void stopPreview() {
+    public void stopPreview() {
         if (autoFocusManager != null) {
             autoFocusManager.stop();
             autoFocusManager = null;
@@ -193,13 +198,21 @@ public final class CameraManager {
                 autoFocusManager.stop();
                 autoFocusManager = null;
             }
+            this.isTorch = newSetting;
             configManager.setTorch(theCamera.getCamera(), newSetting);
             if (wasAutoFocusManager) {
                 autoFocusManager = new AutoFocusManager(context, theCamera.getCamera());
                 autoFocusManager.start();
             }
+
+            if(onTorchListener!=null){
+                onTorchListener.onTorchChanged(newSetting);
+            }
+
         }
+
     }
+
 
     /**
      * A single preview frame will be returned to the handler supplied. The data will arrive as byte[]
@@ -376,5 +389,50 @@ public final class CameraManager {
         return new PlanarYUVLuminanceSource(data, width, height, left, top,
                 size, size, false);
     }
+
+    /**
+     * 提供闪光灯监听
+     * @param listener
+     */
+    public void setOnTorchListener(OnTorchListener listener){
+        this.onTorchListener = listener;
+    }
+
+    /**
+     * 传感器光线照度监听
+     * @param listener
+     */
+    public void setOnSensorListener(OnSensorListener listener){
+        this.onSensorListener = listener;
+    }
+
+    public void sensorChanged(boolean tooDark,float ambientLightLux){
+        if(onSensorListener!=null){
+            onSensorListener.onSensorChanged(isTorch,tooDark,ambientLightLux);
+        }
+    }
+
+    public interface OnTorchListener{
+        /**
+         * 当闪光灯状态改变时触发
+         * @param torch true表示开启、false表示关闭
+         */
+        void onTorchChanged(boolean torch);
+    }
+
+
+    /**
+     * 传感器灯光亮度监听
+     */
+    public interface OnSensorListener{
+        /**
+         *
+         * @param torch 闪光灯是否开启
+         * @param tooDark  传感器检测到的光线亮度，是否太暗
+         * @param ambientLightLux 光线照度
+         */
+        void onSensorChanged(boolean torch,boolean tooDark,float ambientLightLux);
+    }
+
 
 }
