@@ -15,7 +15,6 @@
  */
 package com.king.zxing;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -25,9 +24,12 @@ import com.king.zxing.camera.CameraManager;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
-
-public class CaptureActivity extends Activity implements OnCaptureCallback{
+/**
+ * @author <a href="mailto:jenly1314@gmail.com">Jenly</a>
+ */
+public class CaptureActivity extends AppCompatActivity implements OnCaptureCallback{
 
     public static final String KEY_RESULT = Intents.Scan.RESULT;
 
@@ -114,9 +116,10 @@ public class CaptureActivity extends Activity implements OnCaptureCallback{
     }
 
     /**
-     * Get {@link CameraManager}
+     * Get {@link CameraManager} use {@link #getCaptureHelper()#getCameraManager()}
      * @return {@link #mCaptureHelper#getCameraManager()}
      */
+    @Deprecated
     public CameraManager getCameraManager(){
         return mCaptureHelper.getCameraManager();
     }
