@@ -47,6 +47,7 @@ public class CaptureActivity extends AppCompatActivity implements OnCaptureCallb
             setContentView(layoutId);
         }
         initUI();
+        mCaptureHelper.onCreate();
     }
 
     /**
@@ -54,15 +55,21 @@ public class CaptureActivity extends AppCompatActivity implements OnCaptureCallb
      */
     public void initUI(){
         surfaceView = findViewById(getSurfaceViewId());
-        viewfinderView = findViewById(getViewfinderViewId());
+        int viewfinderViewId = getViewfinderViewId();
+        if(viewfinderViewId != 0){
+            viewfinderView = findViewById(viewfinderViewId);
+        }
         int ivTorchId = getIvTorchId();
         if(ivTorchId != 0){
             ivTorch = findViewById(ivTorchId);
             ivTorch.setVisibility(View.INVISIBLE);
         }
+        initCaptureHelper();
+    }
+
+    public void initCaptureHelper(){
         mCaptureHelper = new CaptureHelper(this,surfaceView,viewfinderView,ivTorch);
         mCaptureHelper.setOnCaptureCallback(this);
-        mCaptureHelper.onCreate();
     }
 
     /**
@@ -84,7 +91,7 @@ public class CaptureActivity extends AppCompatActivity implements OnCaptureCallb
 
     /**
      * {@link #viewfinderView} 的 ID
-     * @return
+     * @return 默认返回{@code R.id.viewfinderView}, 如果不需要扫码框可以返回0
      */
     public int getViewfinderViewId(){
         return R.id.viewfinderView;

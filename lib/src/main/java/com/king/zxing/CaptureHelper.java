@@ -22,7 +22,6 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.Camera;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -33,6 +32,7 @@ import com.google.zxing.DecodeHintType;
 import com.google.zxing.Result;
 import com.king.zxing.camera.CameraManager;
 import com.king.zxing.camera.FrontLightMode;
+import com.king.zxing.util.LogUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,9 +47,10 @@ import androidx.fragment.app.Fragment;
 /**
  * @author <a href="mailto:jenly1314@gmail.com">Jenly</a>
  */
+/**
+ * @author <a href="mailto:jenly1314@gmail.com">Jenly</a>
+ */
 public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,CaptureManager, SurfaceHolder.Callback  {
-
-    public static final String TAG = CaptureHelper.class.getSimpleName();
 
     private Activity activity;
 
@@ -63,6 +64,7 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
     private AmbientLightManager ambientLightManager;
 
 
+    private SurfaceView surfaceView;
     private ViewfinderView viewfinderView;
     private SurfaceHolder surfaceHolder;
     private View ivTorch;
@@ -186,15 +188,16 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
      */
     public CaptureHelper(Activity activity,SurfaceView surfaceView,ViewfinderView viewfinderView,View ivTorch){
         this.activity = activity;
+        this.surfaceView = surfaceView;
         this.viewfinderView = viewfinderView;
         this.ivTorch = ivTorch;
-        surfaceHolder = surfaceView.getHolder();
-        hasSurface = false;
     }
 
 
     @Override
     public void onCreate(){
+        surfaceHolder = surfaceView.getHolder();
+        hasSurface = false;
         inactivityTimer = new InactivityTimer(activity);
         beepManager = new BeepManager(activity);
         ambientLightManager = new AmbientLightManager(activity);
@@ -332,7 +335,7 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
             throw new IllegalStateException("No SurfaceHolder provided");
         }
         if (cameraManager.isOpen()) {
-            Log.w(TAG, "initCamera() while already open -- late SurfaceView callback?");
+            LogUtils.w("initCamera() while already open -- late SurfaceView callback?");
             return;
         }
         try {
@@ -346,18 +349,18 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
                 captureHandler.setSupportLuminanceInvert(isSupportLuminanceInvert);
             }
         } catch (IOException ioe) {
-            Log.w(TAG, ioe);
+            LogUtils.w(ioe);
         } catch (RuntimeException e) {
             // Barcode Scanner has seen crashes in the wild of this variety:
             // java.?lang.?RuntimeException: Fail to connect to camera service
-            Log.w(TAG, "Unexpected error initializing camera", e);
+            LogUtils.w( "Unexpected error initializing camera", e);
         }
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         if (holder == null) {
-            Log.e(TAG, "*** WARNING *** surfaceCreated() gave us a null surface!");
+            LogUtils.w( "*** WARNING *** surfaceCreated() gave us a null surface!");
         }
         if (!hasSurface) {
             hasSurface = true;
@@ -393,7 +396,7 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
             params.setZoom(zoom);
             camera.setParameters(params);
         } else {
-            Log.i(TAG, "zoom not supported");
+            LogUtils.i( "zoom not supported");
         }
     }
 
@@ -522,7 +525,7 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
             return;
         }
 
-        if(isPlayBeep){//如果播放音效，则稍微延迟一点，给予播放音效时间
+        if(isPlayBeep && captureHandler != null){//如果播放音效，则稍微延迟一点，给予播放音效时间
             captureHandler.postDelayed(() -> {
                 //如果设置了回调，并且onCallback返回为true，则表示拦截
                 if(onCaptureCallback!=null && onCaptureCallback.onResultCallback(text)){
@@ -533,6 +536,7 @@ public class CaptureHelper implements CaptureLifecycle,CaptureTouchEvent,Capture
                 activity.setResult(Activity.RESULT_OK,intent);
                 activity.finish();
             },100);
+
             return;
         }
 
